@@ -5,5 +5,5 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   // IMPORTANTE: cambia 'lotto-ecuador' por el nombre exacto de tu repo en GitHub
-  base: '/lotto-ecuador/',
+  base: '/claude-lot/',
 });
