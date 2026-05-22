@@ -5,12 +5,13 @@ import { exportJSON, parseImport } from '../utils/storage';
 interface Props {
   draws: Draw[];
   userAdded: Draw[];
+  disabled: Draw[];
   onAdd: (raw: string) => { ok: boolean; msg: string };
   onImport: (draws: Draw[]) => void;
   onReset: () => void;
 }
 
-export function AddDraw({ draws, userAdded, onAdd, onImport, onReset }: Props) {
+export function AddDraw({ draws, userAdded, disabled, onAdd, onImport, onReset }: Props) {
   const [input, setInput] = useState('');
   const [feedback, setFeedback] = useState<{ msg: string; type: '' | 'ok' | 'err' }>({ msg: '', type: '' });
   const fileRef = useRef<HTMLInputElement>(null);
@@ -33,7 +34,7 @@ export function AddDraw({ draws, userAdded, onAdd, onImport, onReset }: Props) {
   }
 
   function handleExport() {
-    exportJSON({ draws, userAdded });
+    exportJSON({ draws, userAdded, disabled });
     showFeedback(`✓ Exportados ${draws.length} sorteos`, 'ok');
   }
 
@@ -93,7 +94,10 @@ export function AddDraw({ draws, userAdded, onAdd, onImport, onReset }: Props) {
       </div>
       <div className="storage-info">
         <span className="dot" />
-        <span>{draws.length} sorteos · {userAdded.length} añadidos por ti</span>
+        <span>
+          {draws.length - disabled.length} activos de {draws.length} sorteos · {userAdded.length} añadidos por ti
+          {disabled.length > 0 && ` · ${disabled.length} desactivados`}
+        </span>
       </div>
     </div>
   );

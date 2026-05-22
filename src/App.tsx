@@ -9,12 +9,15 @@ import { StrategyPanel } from './components/StrategyPanel';
 import { DrawHistory } from './components/DrawHistory';
 
 export default function App() {
-  const { draws, userAdded, addDraw, removeDraw, importDraws, reset } = useDraws();
+  const {
+    draws, activeDraws, userAdded, disabled,
+    addDraw, removeDraw, toggleDraw, importDraws, reset,
+  } = useDraws();
   const [posTab, setPosTab] = useState(0);
 
-  const stats = useMemo(() => computeStats(draws), [draws]);
+  const stats = useMemo(() => computeStats(activeDraws), [activeDraws]);
 
-  const chronological = useMemo(() => [...draws].reverse(), [draws]);
+  const chronological = useMemo(() => [...activeDraws].reverse(), [activeDraws]);
   const numsChron = useMemo(() => chronological.map(d => parseInt(d)), [chronological]);
   const sumsChron = useMemo(() => chronological.map(d => digitSum(d)), [chronological]);
 
@@ -29,9 +32,12 @@ export default function App() {
           reconstrucción de pseudo-atractores.
         </p>
         <div className="meta-strip">
-          <span><strong>{stats.totalDraws}</strong> sorteos</span>
+          <span><strong>{stats.totalDraws}</strong> sorteos activos</span>
           <span><strong>{stats.totalDigits}</strong> dígitos</span>
           <span><strong>6</strong> series temporales</span>
+          {disabled.length > 0 && (
+            <span><strong>{disabled.length}</strong> desactivados</span>
+          )}
           <span><strong>Quito</strong> · Ecuador</span>
         </div>
       </header>
@@ -46,6 +52,7 @@ export default function App() {
       <AddDraw
         draws={draws}
         userAdded={userAdded}
+        disabled={disabled}
         onAdd={addDraw}
         onImport={importDraws}
         onReset={reset}
@@ -62,7 +69,7 @@ export default function App() {
           revelan posibles sesgos.
         </p>
         <div className="card">
-          <FrequencyChart draws={draws} mode="global" />
+          <FrequencyChart draws={activeDraws} mode="global" />
         </div>
       </section>
 
@@ -87,7 +94,7 @@ export default function App() {
               </button>
             ))}
           </div>
-          <FrequencyChart draws={draws} mode={posTab} />
+          <FrequencyChart draws={activeDraws} mode={posTab} />
         </div>
       </section>
 
@@ -144,7 +151,7 @@ export default function App() {
           Seis métodos matemáticos diferentes para "predecir" el próximo número.
           Si varios coinciden en un dígito, es una señal interesante.
         </p>
-        <StrategyPanel draws={draws} />
+        <StrategyPanel draws={activeDraws} />
       </section>
 
       {/* 07. Historial */}
@@ -154,11 +161,17 @@ export default function App() {
           <h2 className="section-title">Historial completo</h2>
         </div>
         <p className="section-desc">
-          Orden cronológico inverso (primero = más reciente).
-          Naranja = último. Verde = añadido por ti. Hover para eliminar.
+          Click en un sorteo para desactivarlo/activarlo (se excluye del análisis sin eliminarse).
+          Naranja = último. Verde = añadido por ti. Gris tachado = desactivado.
         </p>
         <div className="card">
-          <DrawHistory draws={draws} userAdded={userAdded} onRemove={removeDraw} />
+          <DrawHistory
+            draws={draws}
+            userAdded={userAdded}
+            disabled={disabled}
+            onRemove={removeDraw}
+            onToggle={toggleDraw}
+          />
         </div>
       </section>
 

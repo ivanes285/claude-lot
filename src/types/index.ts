@@ -18,4 +18,5 @@ export interface Strategy {
 export interface DrawsState {
   draws: Draw[];
   userAdded: Draw[];
+  disabled: Draw[]; // draws excluded from analysis but kept in list
 }

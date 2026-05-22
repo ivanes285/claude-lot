@@ -287,12 +287,23 @@ canvas { width: 100%; height: auto; display: block; background: rgba(0,0,0,0.2);
 @media (max-width: 600px) { .comparison-table td, .comparison-table th { padding: 10px 8px; } .comp-logic { display: none; } }
 
 /* RAW DATA */
-.raw-data { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-.raw-num { padding: 8px 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); text-align: center; letter-spacing: 0.05em; color: var(--ink-dim); border-radius: 2px; position: relative; transition: all 0.2s; }
+.raw-data { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.raw-num { padding: 8px 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); text-align: center; letter-spacing: 0.05em; color: var(--ink-dim); border-radius: 2px; position: relative; transition: all 0.2s; cursor: pointer; user-select: none; }
+.raw-num:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.04); }
 .raw-num.latest { color: var(--accent); border-color: var(--accent); background: rgba(255,179,71,0.08); }
 .raw-num.user-added { color: var(--accent-3); border-color: rgba(79,209,199,0.3); background: rgba(79,209,199,0.05); }
-.raw-num .del { position: absolute; top: 1px; right: 3px; font-size: 10px; color: var(--danger); cursor: pointer; opacity: 0; transition: opacity 0.2s; font-weight: 700; }
+.raw-num.disabled { color: #4a5468; border-color: rgba(255,255,255,0.04); background: rgba(0,0,0,0.15); text-decoration: line-through; opacity: 0.5; }
+.raw-num.disabled:hover { opacity: 0.75; border-color: var(--accent-3); }
+.raw-num .del { position: absolute; top: 1px; right: 3px; font-size: 10px; color: var(--danger); cursor: pointer; opacity: 0; transition: opacity 0.2s; font-weight: 700; z-index: 2; }
 .raw-num:hover .del { opacity: 1; }
+.toggle-icon { position: absolute; top: 2px; left: 4px; font-size: 8px; line-height: 1; }
+.toggle-icon.on { color: var(--accent-3); }
+.toggle-icon.off { color: #4a5468; }
+.toggle-info {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--ink-dim); margin-bottom: 12px; letter-spacing: 0.05em;
+}
+.toggle-info strong { color: var(--ink); }
 
 /* FOOTER */
 footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.15em; color: var(--ink-dim); text-transform: uppercase; }

@@ -11,11 +11,11 @@ export function loadState(): DrawsState {
     if (raw) {
       const parsed = JSON.parse(raw) as DrawsState;
       if (Array.isArray(parsed.draws) && parsed.draws.length > 0) {
-        return parsed;
+        return { ...parsed, disabled: parsed.disabled || [] };
       }
     }
   } catch { /* corrupted, ignore */ }
-  return { draws: [...initialDraws], userAdded: [] };
+  return { draws: [...initialDraws], userAdded: [], disabled: [] };
 }
 
 export function saveState(state: DrawsState): void {
@@ -26,7 +26,7 @@ export function saveState(state: DrawsState): void {
 
 export function resetState(): DrawsState {
   try { localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
-  return { draws: [...initialDraws], userAdded: [] };
+  return { draws: [...initialDraws], userAdded: [], disabled: [] };
 }
 
 export function exportJSON(state: DrawsState): void {
