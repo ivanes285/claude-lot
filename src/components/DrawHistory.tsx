@@ -4,18 +4,10 @@ interface Props {
   draws: Draw[];
   userAdded: Draw[];
   disabled: Draw[];
-  onRemove: (index: number) => void;
   onToggle: (index: number) => void;
 }
 
-export function DrawHistory({ draws, userAdded, disabled, onRemove, onToggle }: Props) {
-  function handleRemove(e: React.MouseEvent, index: number, draw: string) {
-    e.stopPropagation();
-    if (confirm(`¿Eliminar sorteo ${draw} permanentemente?`)) {
-      onRemove(index);
-    }
-  }
-
+export function DrawHistory({ draws, userAdded, disabled, onToggle }: Props) {
   const disabledCount = disabled.length;
   const activeCount = draws.length - disabledCount;
 
@@ -48,13 +40,6 @@ export function DrawHistory({ draws, userAdded, disabled, onRemove, onToggle }: 
               {isOff && <span className="toggle-icon off">○</span>}
               {!isOff && <span className="toggle-icon on">●</span>}
               {d}
-              <span
-                className="del"
-                onClick={(e) => handleRemove(e, i, d)}
-                title="Eliminar permanentemente"
-              >
-                ×
-              </span>
             </div>
           );
         })}

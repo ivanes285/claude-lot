@@ -11,7 +11,7 @@ import { DrawHistory } from './components/DrawHistory';
 export default function App() {
   const {
     draws, activeDraws, userAdded, disabled,
-    addDraw, removeDraw, toggleDraw, importDraws, reset,
+    addDraw, toggleDraw,
   } = useDraws();
   const [posTab, setPosTab] = useState(0);
 
@@ -54,8 +54,6 @@ export default function App() {
         userAdded={userAdded}
         disabled={disabled}
         onAdd={addDraw}
-        onImport={importDraws}
-        onReset={reset}
       />
 
       {/* 01. Frecuencia Global */}
@@ -169,7 +167,6 @@ export default function App() {
             draws={draws}
             userAdded={userAdded}
             disabled={disabled}
-            onRemove={removeDraw}
             onToggle={toggleDraw}
           />
         </div>

@@ -1,26 +1,21 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import type { Draw } from '../types';
-import { exportJSON, parseImport } from '../utils/storage';
+import { exportJSON } from '../utils/storage';
 
 interface Props {
   draws: Draw[];
   userAdded: Draw[];
   disabled: Draw[];
   onAdd: (raw: string) => { ok: boolean; msg: string };
-  onImport: (draws: Draw[]) => void;
-  onReset: () => void;
 }
 
-export function AddDraw({ draws, userAdded, disabled, onAdd, onImport, onReset }: Props) {
+export function AddDraw({ draws, userAdded, disabled, onAdd }: Props) {
   const [input, setInput] = useState('');
   const [feedback, setFeedback] = useState<{ msg: string; type: '' | 'ok' | 'err' }>({ msg: '', type: '' });
-  const fileRef = useRef<HTMLInputElement>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   function showFeedback(msg: string, type: 'ok' | 'err') {
     setFeedback({ msg, type });
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setFeedback({ msg: '', type: '' }), 4000);
+    setTimeout(() => setFeedback({ msg: '', type: '' }), 4000);
   }
 
   function handleAdd() {
@@ -36,35 +31,6 @@ export function AddDraw({ draws, userAdded, disabled, onAdd, onImport, onReset }
   function handleExport() {
     exportJSON({ draws, userAdded, disabled });
     showFeedback(`✓ Exportados ${draws.length} sorteos`, 'ok');
-  }
-
-  function handleImportClick() {
-    fileRef.current?.click();
-  }
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const imported = parseImport(text);
-      if (imported) {
-        onImport(imported);
-        showFeedback(`✓ Importados ${imported.length} sorteos`, 'ok');
-      } else {
-        showFeedback('✗ Formato inválido', 'err');
-      }
-      e.target.value = '';
-    };
-    reader.readAsText(file);
-  }
-
-  function handleReset() {
-    if (confirm('¿Restaurar el histórico base? Se perderán los sorteos que hayas agregado.')) {
-      onReset();
-      showFeedback('✓ Histórico restaurado', 'ok');
-    }
   }
 
   return (
@@ -87,16 +53,14 @@ export function AddDraw({ draws, userAdded, disabled, onAdd, onImport, onReset }
         <div className={`form-feedback ${feedback.type}`}>{feedback.msg}</div>
       )}
       <div className="form-actions">
-        <button className="btn btn-secondary" onClick={handleExport}>↓ Exportar JSON</button>
-        <button className="btn btn-secondary" onClick={handleImportClick}>↑ Importar JSON</button>
-        <button className="btn btn-danger" onClick={handleReset}>↺ Restaurar</button>
-        <input ref={fileRef} type="file" accept=".json,.txt" style={{ display: 'none' }} onChange={handleFileChange} />
+        <button className="btn btn-secondary" onClick={handleExport}>↓ Exportar JSON (backup)</button>
       </div>
       <div className="storage-info">
         <span className="dot" />
         <span>
-          {draws.length - disabled.length} activos de {draws.length} sorteos · {userAdded.length} añadidos por ti
+          {draws.length - disabled.length} activos de {draws.length} sorteos
           {disabled.length > 0 && ` · ${disabled.length} desactivados`}
+          {' · '}🔥 Firebase sincronizado
         </span>
       </div>
     </div>
