@@ -1,9 +1,35 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Draw, DrawsState } from '../types';
-import { isValidDraw, loadState, saveState, resetState as resetStorage } from '../utils/storage';
+import {
+  isValidDraw, loadLocal, saveState, resetState as resetStorage,
+  subscribeFirebase, getDefaultState,
+} from '../utils/storage';
 
 export function useDraws() {
-  const [state, setState] = useState<DrawsState>(loadState);
+  const [state, setState] = useState<DrawsState>(loadLocal);
+  const isLocalUpdate = useRef(false);
+
+  // Subscribe to Firebase realtime updates
+  useEffect(() => {
+    const unsubscribe = subscribeFirebase((firebaseState) => {
+      // Skip if this was our own update
+      if (isLocalUpdate.current) {
+        isLocalUpdate.current = false;
+        return;
+      }
+      setState(firebaseState);
+    });
+    return unsubscribe;
+  }, []);
+
+  const updateState = useCallback((updater: (prev: DrawsState) => DrawsState) => {
+    setState(prev => {
+      const next = updater(prev);
+      isLocalUpdate.current = true;
+      saveState(next);
+      return next;
+    });
+  }, []);
 
   const addDraw = useCallback((raw: string): { ok: boolean; msg: string } => {
     let val = raw.trim().replace(/\D/g, '');
@@ -12,59 +38,52 @@ export function useDraws() {
     if (val.length > 6) return { ok: false, msg: 'Máximo 6 dígitos' };
     if (!isValidDraw(val)) return { ok: false, msg: 'Solo dígitos 0–9' };
 
-    setState(prev => {
-      const next: DrawsState = {
-        draws: [val, ...prev.draws],
-        userAdded: [val, ...prev.userAdded],
-        disabled: prev.disabled,
-      };
-      saveState(next);
-      return next;
-    });
+    updateState(prev => ({
+      draws: [val, ...prev.draws],
+      userAdded: [val, ...prev.userAdded],
+      disabled: prev.disabled,
+    }));
     return { ok: true, msg: `✓ Sorteo ${val} agregado` };
-  }, []);
+  }, [updateState]);
 
   const removeDraw = useCallback((index: number) => {
-    setState(prev => {
+    updateState(prev => {
       const removed = prev.draws[index];
-      const next: DrawsState = {
+      return {
         draws: prev.draws.filter((_, i) => i !== index),
         userAdded: prev.userAdded.filter(d => d !== removed),
         disabled: prev.disabled.filter(d => d !== removed),
       };
-      saveState(next);
-      return next;
     });
-  }, []);
+  }, [updateState]);
 
   const toggleDraw = useCallback((index: number) => {
-    setState(prev => {
+    updateState(prev => {
       const draw = prev.draws[index];
       const isDisabled = prev.disabled.includes(draw);
-      const next: DrawsState = {
+      return {
         draws: prev.draws,
         userAdded: prev.userAdded,
         disabled: isDisabled
           ? prev.disabled.filter(d => d !== draw)
           : [...prev.disabled, draw],
       };
-      saveState(next);
-      return next;
     });
-  }, []);
+  }, [updateState]);
 
   const importDraws = useCallback((imported: Draw[]) => {
     const next: DrawsState = { draws: imported, userAdded: [...imported], disabled: [] };
+    isLocalUpdate.current = true;
     saveState(next);
     setState(next);
   }, []);
 
   const reset = useCallback(() => {
+    isLocalUpdate.current = true;
     const fresh = resetStorage();
     setState(fresh);
   }, []);
 
-  // Active draws = all draws minus disabled ones
   const activeDraws = useMemo(
     () => state.draws.filter(d => !state.disabled.includes(d)),
     [state.draws, state.disabled]
