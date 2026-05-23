@@ -1,12 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { Draw, StrategyName } from '../types';
-import { strategies, computeConsensus } from '../utils/strategies';
+import { strategies, computeConsensus, STRAT_KEYS } from '../utils/strategies';
 
 interface Props {
   draws: Draw[];
 }
-
-const STRAT_KEYS: StrategyName[] = ['hot', 'cold', 'markov', 'mean', 'gap', 'hybrid'];
 
 export function StrategyPanel({ draws }: Props) {
   const [active, setActive] = useState<StrategyName>('hot');
