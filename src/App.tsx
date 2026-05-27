@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useDraws } from './hooks/useDraws';
 import { computeStats, digitSum } from './utils/analysis';
 import { AddDraw } from './components/AddDraw';
+import { TopPicks } from './components/TopPicks';
 import { FrequencyChart } from './components/FrequencyChart';
 import { ReturnMap, TimeSeries } from './components/Charts';
 import { StatsGrid } from './components/StatsGrid';
@@ -55,6 +56,8 @@ export default function App() {
         disabled={disabled}
         onAdd={addDraw}
       />
+
+      <TopPicks draws={activeDraws} />
 
       {/* 01. Frecuencia Global */}
       <section className="section">
