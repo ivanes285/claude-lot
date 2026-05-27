@@ -6,14 +6,59 @@ interface Props {
   draws: Draw[];
 }
 
+function generateVariations(base: number[], range: number): string[] {
+  const baseNum = parseInt(base.join(''));
+  const variations: Set<string> = new Set();
+  
+  // Add exact +range and -range
+  for (let delta = -range; delta <= range; delta++) {
+    if (delta === 0) continue;
+    const v = baseNum + delta;
+    if (v >= 0 && v <= 999999) {
+      variations.add(String(v).padStart(6, '0'));
+    }
+  }
+
+  // Also vary individual positions ±1 and ±2 for more spread
+  for (let p = 0; p < 6; p++) {
+    for (const offset of [-2, -1, 1, 2]) {
+      const newDigit = base[p] + offset;
+      if (newDigit >= 0 && newDigit <= 9) {
+        const copy = [...base];
+        copy[p] = newDigit;
+        variations.add(copy.join(''));
+      }
+    }
+  }
+
+  // Remove the base number itself
+  variations.delete(base.join(''));
+
+  // Sort by distance from base and take top entries
+  const sorted = [...variations].sort((a, b) => {
+    const distA = Math.abs(parseInt(a) - baseNum);
+    const distB = Math.abs(parseInt(b) - baseNum);
+    return distA - distB;
+  });
+
+  return sorted;
+}
+
 export function StrategyPanel({ draws }: Props) {
   const [active, setActive] = useState<StrategyName>('hot');
   const [showComparison, setShowComparison] = useState(false);
+  const [showVariations, setShowVariations] = useState(false);
+  const [varRange, setVarRange] = useState(5);
 
   const strat = strategies[active];
   const result = useMemo(() => strat.compute(draws), [draws, active]);
   const sum = result.num.reduce((a, b) => a + b, 0);
   const pairs = result.num.filter(d => d % 2 === 0).length;
+
+  const variations = useMemo(
+    () => generateVariations(result.num, varRange),
+    [result.num, varRange]
+  );
 
   const allResults = useMemo(() => {
     return STRAT_KEYS.map(key => {
@@ -63,7 +108,12 @@ export function StrategyPanel({ draws }: Props) {
         </div>
 
         <div className="pred-actions">
-          <button className="pred-btn" onClick={() => setActive(active)}>↻ Recalcular</button>
+          <button
+            className={`pred-btn ${showVariations ? 'active-btn' : ''}`}
+            onClick={() => setShowVariations(!showVariations)}
+          >
+            {showVariations ? '⊟ Ocultar variaciones' : '⊞ Ver variaciones'}
+          </button>
           <button
             className="pred-btn secondary"
             onClick={() => setShowComparison(!showComparison)}
@@ -74,6 +124,78 @@ export function StrategyPanel({ draws }: Props) {
 
         <p className="pred-note">Probabilidad real con cualquier combinación: <strong>1 entre 1,000,000</strong> (0.0001%).</p>
       </div>
+
+      {showVariations && (
+        <div className="variations-card">
+          <div className="var-header">
+            <div className="var-title">Variaciones de {result.num.join('')}</div>
+            <div className="var-range-control">
+              <span className="var-range-label">Rango: ±</span>
+              {[3, 5, 7, 10].map(r => (
+                <button
+                  key={r}
+                  className={`var-range-btn ${varRange === r ? 'active' : ''}`}
+                  onClick={() => setVarRange(r)}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="var-section">
+            <div className="var-section-title">🎯 Numérico ±{varRange}</div>
+            <div className="var-grid">
+              {variations
+                .filter(v => {
+                  const dist = Math.abs(parseInt(v) - parseInt(result.num.join('')));
+                  return dist <= varRange;
+                })
+                .map(v => (
+                  <div key={v} className="var-num">
+                    {v}
+                    <span className="var-delta">
+                      {parseInt(v) - parseInt(result.num.join('')) > 0 ? '+' : ''}
+                      {parseInt(v) - parseInt(result.num.join(''))}
+                    </span>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+
+          <div className="var-section">
+            <div className="var-section-title">🔀 Por posición (±1, ±2 en cada dígito)</div>
+            <div className="var-grid">
+              {variations
+                .filter(v => {
+                  const dist = Math.abs(parseInt(v) - parseInt(result.num.join('')));
+                  return dist > varRange;
+                })
+                .slice(0, 24)
+                .map(v => {
+                  // Find which position changed
+                  const baseStr = result.num.join('');
+                  const diffs: string[] = [];
+                  for (let i = 0; i < 6; i++) {
+                    if (v[i] !== baseStr[i]) diffs.push(`P${i+1}`);
+                  }
+                  return (
+                    <div key={v} className="var-num var-pos">
+                      {v}
+                      <span className="var-delta">{diffs.join(',')}</span>
+                    </div>
+                  );
+                })
+              }
+            </div>
+          </div>
+
+          <div className="var-note">
+            {variations.length} variaciones generadas · base: {result.num.join('')}
+          </div>
+        </div>
+      )}
 
       {showComparison && (
         <div className="comparison-table">
@@ -100,7 +222,7 @@ export function StrategyPanel({ draws }: Props) {
             </tbody>
           </table>
           <div className="consensus">
-            CONSENSO: <strong>{consensus.num.join('')}</strong> · concordancia {avgAgreement.toFixed(1)}/6
+            CONSENSO: <strong>{consensus.num.join('')}</strong> · concordancia {avgAgreement.toFixed(1)}/{STRAT_KEYS.length}
           </div>
         </div>
       )}
