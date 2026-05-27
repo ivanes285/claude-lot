@@ -12,15 +12,39 @@ export function getDefaultState(): DrawsState {
   return { draws: [...initialDraws], userAdded: [], disabled: [] };
 }
 
+// Safely convert Firebase value to array (Firebase can return objects with numeric keys)
+function toArray(val: unknown): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.filter(v => typeof v === 'string');
+  if (typeof val === 'object') return Object.values(val as Record<string, string>).filter(v => typeof v === 'string');
+  return [];
+}
+
+function isValidState(state: unknown): state is DrawsState {
+  if (!state || typeof state !== 'object') return false;
+  const s = state as Record<string, unknown>;
+  const draws = toArray(s.draws);
+  return draws.length > 0 && draws.every(d => /^\d{6}$/.test(d));
+}
+
+function sanitizeState(raw: unknown): DrawsState {
+  if (!raw || typeof raw !== 'object') return getDefaultState();
+  const s = raw as Record<string, unknown>;
+  const draws = toArray(s.draws).filter(d => /^\d{6}$/.test(d));
+  if (draws.length === 0) return getDefaultState();
+  return {
+    draws,
+    userAdded: toArray(s.userAdded).filter(d => /^\d{6}$/.test(d)),
+    disabled: toArray(s.disabled).filter(d => /^\d{6}$/.test(d)),
+  };
+}
+
 // ── localStorage (fallback) ──
 export function loadLocal(): DrawsState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as DrawsState;
-      if (Array.isArray(parsed.draws) && parsed.draws.length > 0) {
-        return { ...parsed, disabled: parsed.disabled || [] };
-      }
+      return sanitizeState(JSON.parse(raw));
     }
   } catch { /* corrupted */ }
   return getDefaultState();
@@ -35,7 +59,13 @@ export function saveLocal(state: DrawsState): void {
 // ── Firebase ──
 export function saveToFirebase(state: DrawsState): void {
   try {
-    set(ref(db, FB_REF), state);
+    // Ensure we always save arrays (never undefined/null)
+    const safe = {
+      draws: state.draws || [],
+      userAdded: state.userAdded || [],
+      disabled: state.disabled || [],
+    };
+    set(ref(db, FB_REF), safe);
   } catch (e) {
     console.warn('Firebase save failed:', e);
   }
@@ -44,19 +74,20 @@ export function saveToFirebase(state: DrawsState): void {
 export function subscribeFirebase(callback: (state: DrawsState) => void): () => void {
   const dbRef = ref(db, FB_REF);
   const handler = onValue(dbRef, (snapshot) => {
-    const val = snapshot.val();
-    if (val && Array.isArray(val.draws) && val.draws.length > 0) {
-      callback({
-        draws: val.draws,
-        userAdded: val.userAdded || [],
-        disabled: val.disabled || [],
-      });
+    try {
+      const val = snapshot.val();
+      if (!val) return;
+      const state = sanitizeState(val);
+      if (state.draws.length > 0) {
+        callback(state);
+      }
+    } catch (e) {
+      console.warn('Firebase parse error:', e);
     }
   }, (error) => {
     console.warn('Firebase read failed:', error);
   });
 
-  // Return unsubscribe function
   return () => off(dbRef, 'value', handler);
 }
 
