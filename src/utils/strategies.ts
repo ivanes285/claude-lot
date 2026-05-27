@@ -109,14 +109,15 @@ export const strategies: Record<StrategyName, Strategy> = {
   hybrid: {
     label: 'HÍBRIDO',
     icon: '🧬',
-    explain: 'Combina HOT, MARKOV, INERCIA, VECINOS y GAP con pesos. Consenso ponderado de las mejores.',
+    explain: 'Combina todas las estrategias con pesos: HOT, MARKOV, INERCIA, MOMENTUM, VECINOS, GAP y TENDENCIA.',
     logic: 'Σ pesos × score',
     compute: (draws: Draw[]) => {
       const num: number[] = [], detail: string[] = [];
       const preds = [
-        { r: strategies.hot.compute(draws).num, w: 0.20 },
-        { r: strategies.markov.compute(draws).num, w: 0.20 },
-        { r: strategies.inercia.compute(draws).num, w: 0.20 },
+        { r: strategies.hot.compute(draws).num, w: 0.15 },
+        { r: strategies.markov.compute(draws).num, w: 0.15 },
+        { r: strategies.inercia.compute(draws).num, w: 0.15 },
+        { r: strategies.momentum.compute(draws).num, w: 0.15 },
         { r: strategies.vecinos.compute(draws).num, w: 0.15 },
         { r: strategies.gap.compute(draws).num, w: 0.10 },
         { r: strategies.tendencia.compute(draws).num, w: 0.10 },
@@ -239,11 +240,42 @@ export const strategies: Record<StrategyName, Strategy> = {
       return { num, detail };
     },
   },
+
+  momentum: {
+    label: 'MOMENTUM',
+    icon: '🚀',
+    explain: 'Calcula la "velocidad de cambio" de los últimos 5 sorteos por posición. Detecta caídas y subidas bruscas recientes.',
+    logic: 'Σ ponderado de deltas',
+    compute: (draws: Draw[]) => {
+      if (draws.length < 2) return { num: [0,0,0,0,0,0], detail: Array(6).fill('sin data') };
+      const last = draws[0];
+      const window = Math.min(5, draws.length - 1);
+      const num: number[] = [], detail: string[] = [];
+      for (let p = 0; p < 6; p++) {
+        const deltas: number[] = [];
+        for (let i = 0; i < window; i++) {
+          deltas.push(+draws[i][p] - +draws[i + 1][p]);
+        }
+        let wSum = 0, wTotal = 0;
+        for (let i = 0; i < deltas.length; i++) {
+          const w = window - i;
+          wSum += deltas[i] * w;
+          wTotal += w;
+        }
+        const avg = wSum / Math.max(wTotal, 1);
+        const val = Math.max(0, Math.min(9, Math.round(+last[p] + avg)));
+        const dir = avg > 0.3 ? '↑' : avg < -0.3 ? '↓' : '→';
+        num.push(val);
+        detail.push(`${dir}${avg > 0 ? '+' : ''}${avg.toFixed(1)}`);
+      }
+      return { num, detail };
+    },
+  },
 };
 
 export const STRAT_KEYS: StrategyName[] = [
   'hot', 'cold', 'markov', 'mean', 'gap', 'hybrid',
-  'inercia', 'vecinos', 'tendencia', 'ciclo',
+  'inercia', 'vecinos', 'tendencia', 'ciclo', 'momentum',
 ];
 
 export function computeConsensus(draws: Draw[]): { num: number[]; agreement: number[] } {

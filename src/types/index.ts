@@ -1,6 +1,6 @@
 export type Draw = string; // 6-digit string "000000" - "999999"
 
-export type StrategyName = 'hot' | 'cold' | 'markov' | 'mean' | 'gap' | 'hybrid' | 'inercia' | 'vecinos' | 'tendencia' | 'ciclo';
+export type StrategyName = 'hot' | 'cold' | 'markov' | 'mean' | 'gap' | 'hybrid' | 'inercia' | 'vecinos' | 'tendencia' | 'ciclo' | 'momentum';
 
 export interface StrategyResult {
   num: number[];
