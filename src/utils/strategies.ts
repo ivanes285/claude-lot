@@ -109,19 +109,18 @@ export const strategies: Record<StrategyName, Strategy> = {
   hybrid: {
     label: 'HÍBRIDO',
     icon: '🧬',
-    explain: 'Combina todas las estrategias con pesos: HOT, MARKOV, INERCIA, MOMENTUM, VECINOS, GAP y TENDENCIA.',
-    logic: 'Σ pesos × score',
+    explain: 'Pesos calibrados con resultados reales: TENDENCIA 25%, MEDIA 20%, INERCIA 20%, HOT 15%, MARKOV 10%, CICLO 5%, GAP 5%.',
+    logic: 'Σ pesos reales',
     compute: (draws: Draw[]) => {
       const num: number[] = [], detail: string[] = [];
       const preds = [
+        { r: strategies.tendencia.compute(draws).num, w: 0.25 },
+        { r: strategies.mean.compute(draws).num, w: 0.20 },
+        { r: strategies.inercia.compute(draws).num, w: 0.20 },
         { r: strategies.hot.compute(draws).num, w: 0.15 },
-        { r: strategies.markov.compute(draws).num, w: 0.15 },
-        { r: strategies.inercia.compute(draws).num, w: 0.15 },
-        { r: strategies.momentum.compute(draws).num, w: 0.15 },
-        { r: strategies.vecinos.compute(draws).num, w: 0.15 },
-        { r: strategies.gap.compute(draws).num, w: 0.10 },
-        { r: strategies.tendencia.compute(draws).num, w: 0.10 },
+        { r: strategies.markov.compute(draws).num, w: 0.10 },
         { r: strategies.ciclo.compute(draws).num, w: 0.05 },
+        { r: strategies.gap.compute(draws).num, w: 0.05 },
       ];
       for (let p = 0; p < 6; p++) {
         const scores = Array(10).fill(0) as number[];

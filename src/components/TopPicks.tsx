@@ -7,18 +7,19 @@ interface Props {
 }
 
 // Order strategies by relevance (best first)
+// Ordenados por rendimiento real en 3 sorteos comparados
 const RANKED_KEYS = [
-  'hybrid',     // Combina todo
-  'inercia',    // Captura tendencia reciente
-  'momentum',   // Detecta cambios bruscos
-  'markov',     // Transiciones
-  'hot',        // Frecuencia histórica
-  'vecinos',    // Patrón similar
-  'tendencia',  // Regresión
-  'ciclo',      // Periodicidad
-  'gap',        // Atrasados
-  'mean',       // Promedio
-  'cold',       // Menos frecuente
+  'tendencia',  // #1 ganó sorteo 3, consistente
+  'mean',       // #2 ganó sorteo 1, 2do en sorteo 3
+  'inercia',    // #3 consistente top 3
+  'hybrid',     // #4 combina los mejores con pesos reales
+  'hot',        // #5 ganó sorteo 2
+  'markov',     // #6 transiciones
+  'momentum',   // #7 cambios bruscos
+  'ciclo',      // #8 periodicidad
+  'gap',        // #9 atrasados
+  'vecinos',    // #10 patrón similar
+  'cold',       // #11 menos frecuente
 ] as const;
 
 export function TopPicks({ draws }: Props) {
